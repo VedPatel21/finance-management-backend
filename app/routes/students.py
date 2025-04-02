@@ -208,3 +208,30 @@ def delete_student(student_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+    
+# Route to delete all students and their related fee records
+@students_bp.route("/delete_all", methods=["DELETE"])
+def delete_all_students():
+    try:
+        students = Student.query.all()
+        if not students:
+            return jsonify({"message": "No students found."}), 200
+
+        for student in students:
+            # Delete associated fee transactions
+            for transaction in student.fee_transactions:
+                db.session.delete(transaction)
+            
+            # Delete associated fee history records
+            for history in student.fee_history:
+                db.session.delete(history)
+            
+            # Now delete the student
+            db.session.delete(student)
+        
+        db.session.commit()
+        return jsonify({"message": "All students and their related data deleted successfully."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
